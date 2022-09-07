@@ -3,12 +3,14 @@ package com.springbatch.demo.springbatchapplication.config;
 import com.springbatch.demo.springbatchapplication.model.User;
 import com.springbatch.demo.springbatchapplication.processor.UserProcessor;
 import com.springbatch.demo.springbatchapplication.repository.UserRepository;
+import com.springbatch.demo.springbatchapplication.writer.UserItemWriter;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
@@ -65,10 +67,15 @@ public class SpringBatchUserConfig {
     }
 
     @Bean
+    public UserItemWriter userItemWriter() {
+        return new UserItemWriter();
+    }
+
+    @Bean
     public Job job() {
         return jobBuilderFactory.get("user-job")
-                .flow(step1())
-                .end()
+                .start(step1())
+                .incrementer(new RunIdIncrementer())
                 .build();
     }
 
@@ -77,7 +84,7 @@ public class SpringBatchUserConfig {
                 .<User, User>chunk(50)
                 .reader(reader())
                 .processor(processor())
-                .writer(writer())
+                .writer(userItemWriter())
                 .build();
     }
 
